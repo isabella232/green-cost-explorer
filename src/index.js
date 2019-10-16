@@ -2,6 +2,9 @@ const AWS = require('aws-sdk')
 require('dotenv').config();
 const Table = require('cli-table');
 const colors = require('colors');
+const fs = require('fs');
+const util = require('util');
+const writeFile = util.promisify(fs.writeFile);
 
 const creds = {
   apiVersion: '2017-10-25',
@@ -13,8 +16,8 @@ const costExplorer = new AWS.CostExplorer(creds);
 const ceParams = {
   // Start=2018-08-01,End=2019-05-01
   TimePeriod: { /* required */
-    Start: '2018-08-01', /* required */
-    End: '2019-05-01' /* required */
+    Start: '2019-01-01', /* required */
+    End: '2019-10-01' /* required */
   },
   Granularity: 'MONTHLY',
   Metrics: [
@@ -207,7 +210,8 @@ function printDataByKey(costObject, key) {
 }
 
 async function runExplorer() {
-  const rawCost = await getRawCosts();
+//  const rawCost = await getRawCosts();
+  const rawCost = require('../data/sample-with-service-breakdown.json');
 
   const assignedCost = await getAssignedCost(rawCost);
 
@@ -222,9 +226,11 @@ async function runExplorer() {
   const costByService = calculateGreenPortions(groupedByService);
   const sortedCostByService = sortBy(costByService, 'greenCost');
 
-  printData(total);
-  printDataByKey(costByMonth, 'month');
-  printDataByKey(sortedCostByService, 'service');
+  await writeFile('vega/by-service.json', JSON.stringify(sortedCostByService));
+
+//  printData(total);
+//  printDataByKey(costByMonth, 'month');
+//  printDataByKey(sortedCostByService, 'service');
 }
 
 module.exports = {
